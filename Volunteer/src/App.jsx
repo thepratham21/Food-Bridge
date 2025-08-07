@@ -18,7 +18,7 @@ function App() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await axios.get('https://food-waste-h2vh.onrender.com/api/v1/user/me',{ withCredentials: true });
+        const response = await axios.get('http://localhost:4000/api/v1/user/me',{ withCredentials: true });
         setIsAuthenticated(true);
         setUser(response.data.user);
       } catch (error) {

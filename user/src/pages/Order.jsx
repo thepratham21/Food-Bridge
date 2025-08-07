@@ -53,7 +53,7 @@ const Order = () => {
     };
   
     try {
-      const response = await fetch("https://food-waste-h2vh.onrender.com/api/v1/order/place", {
+      const response = await fetch("http://localhost:4000/api/v1/order/place", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

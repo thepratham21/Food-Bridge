@@ -13,7 +13,7 @@ const Home = () => {
   useEffect(() => {
     const fetchAcceptedOrders = async () => {
       try {
-        const response = await fetch("https://food-waste-h2vh.onrender.com/api/v1/order/volunteer/orders", {
+        const response = await fetch("http://localhost:4000/api/v1/order/volunteer/orders", {
           method: "GET",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -37,7 +37,7 @@ const Home = () => {
   // Handle completing the order
   const handleCompleteOrder = async (orderId) => {
     try {
-      const response = await fetch("https://food-waste-h2vh.onrender.com/api/v1/order/complete", {
+      const response = await fetch("http://localhost:4000/api/v1/order/complete", {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

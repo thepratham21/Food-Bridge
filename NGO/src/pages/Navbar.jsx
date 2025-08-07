@@ -13,7 +13,7 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      await axios.get("https://food-waste-h2vh.onrender.com/api/v1/user/logout", {
+      await axios.get("http://localhost:4000/api/v1/user/logout", {
         withCredentials: true,
       });
       setIsAuthenticated(false); // Set authentication state to false

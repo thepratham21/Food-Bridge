@@ -11,6 +11,8 @@ import BottomNav from './pages/BottomNav';
 // Import the context
 import { Context } from './main';
 import Navbar from './pages/Navbar';
+import DonatePage from './pages/DonatePage';
+import Profile from './pages/Profile';
 
 function App() {
   const { isAuthenticated, setIsAuthenticated, user, setUser } = useContext(Context);
@@ -18,9 +20,10 @@ function App() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await axios.get('https://food-waste-h2vh.onrender.com/api/v1/user/me',{ withCredentials: true });
+        const response = await axios.get('http://localhost:4000/api/v1/user/me',{ withCredentials: true });
         setIsAuthenticated(true);
         setUser(response.data);
+        console.log(response.data);
       } catch (error) {
         setIsAuthenticated(false);
         setUser({}); // If the user is not authenticated, reset user data
@@ -32,7 +35,7 @@ function App() {
 
   return (
     <Router>
-      {isAuthenticated && <BottomNav />} {/* Render BottomNav only if authenticated */}
+       {/* {isAuthenticated && <BottomNav />}Render BottomNav only if authenticated */}
       {isAuthenticated && <Navbar />}
       <Routes>
         {/* Protected routes */}
@@ -42,8 +45,10 @@ function App() {
         
 
         {/* Public routes */}
+        <Route path="/donate"  element={<DonatePage/>}/>
         <Route path="/signin" element={<SignIn />} />
-       
+        <Route path="/profile" element={<Profile/>}/>
+        
       </Routes>
     </Router>
   );

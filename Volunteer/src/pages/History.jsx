@@ -8,7 +8,7 @@ const History = () => {
   useEffect(() => {
     const fetchCompletedOrders = async () => {
       try {
-        const response = await fetch('https://food-waste-h2vh.onrender.com/api/v1/order/volunteer/history', {
+        const response = await fetch('http://localhost:4000/api/v1/order/volunteer/history', {
           method: 'GET',
           credentials: 'include', // Ensure cookies are sent (if using session or JWT cookies)
           headers: {
