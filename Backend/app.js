@@ -6,6 +6,7 @@ import { dbConnection } from "./database/dbConnection.js";
 import userRouter from "./router/userRouter.js"
 import { errormiddleWare } from "./middlewares/errorMiddeware.js";
 import orderRouter from "./router/orderRouter.js";
+import { mongo } from "mongoose";
 
 
 const app = express();

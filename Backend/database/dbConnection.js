@@ -5,7 +5,7 @@ export const dbConnection = ()=>{
         dbName: "VIT"   //it is a general syntax to check the database which we are using is connected successfully
     }).then(()=>{
         console.log("Connected to database!")
-        // console.log(process.env.MONGO_URL)
+        console.log(process.env.MONGO_URL)
     }).catch(err=>{
         console.log(`Some error occured while connecting to database ${err}`)
     })
