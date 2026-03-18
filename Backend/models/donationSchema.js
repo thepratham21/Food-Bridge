@@ -9,6 +9,11 @@ const donationSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: false // Optional if anonymous donation is allowed
+    },
     amount: {
         type: Number,
         required: true

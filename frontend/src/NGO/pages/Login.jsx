@@ -29,7 +29,7 @@ const Login = () => {
 
     try {
       const response = await axios.post(
-        'http://localhost:4000/api/v1/user/login',
+        `${import.meta.env.VITE_BACKEND_URL}/user/login`,
         { email, password, role: "NGO" },
         { withCredentials: true, timeout: 5000 }
       );

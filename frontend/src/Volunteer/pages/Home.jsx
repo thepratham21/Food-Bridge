@@ -37,7 +37,7 @@ const Home = () => {
     const fetchAcceptedOrders = async () => {
       try {
         const response = await fetch(
-          "http://localhost:4000/api/v1/order/volunteer/orders",
+          `${import.meta.env.VITE_BACKEND_URL}/order/volunteer/orders`,
           {
             method: "GET",
             credentials: "include",
@@ -64,7 +64,7 @@ const Home = () => {
     setCompleting(true);
     try {
       const response = await fetch(
-        "http://localhost:4000/api/v1/order/complete",
+        `${import.meta.env.VITE_BACKEND_URL}/order/complete`,
         {
           method: "PUT",
           credentials: "include",
@@ -90,7 +90,7 @@ const Home = () => {
 
   const handleLogout = async () => {
     try {
-      await fetch("http://localhost:4000/api/v1/user/logout", {
+      await fetch(`${import.meta.env.VITE_BACKEND_URL}/user/logout`, {
         method: "GET",
         credentials: "include",
       });

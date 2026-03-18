@@ -64,14 +64,13 @@ export const getOrdersForNGO = catchAsyncErrors(async (req, res, next) => {
 });
 
 // Accept order & assign volunteer (NGO action)
-// Accept order & assign volunteer (NGO action)
 export const acceptOrder = catchAsyncErrors(async (req, res, next) => {
-    const { orderId, volunteerId, userId } = req.body;
+    const { orderId, volunteerId } = req.body;
+    const ngoId = req.user._id; // Use logged-in NGO's ID from middleware
 
-    // Check if the NGO user exists and has the correct role
-    const ngoUser = await User.findById(userId);
-    if (!ngoUser || ngoUser.role !== 'NGO') {
-        return next(new ErrorHandler("NGO user not found or invalid role!", 404));
+    // Ensure the user is an NGO
+    if (req.user.role !== 'NGO') {
+        return next(new ErrorHandler("Only NGOs can accept orders", 403));
     }
 
     const order = await Order.findById(orderId);
@@ -86,16 +85,14 @@ export const acceptOrder = catchAsyncErrors(async (req, res, next) => {
     // Update the order's status and assign the volunteer and NGO user
     order.status = "Accepted";
     order.volunteerId = volunteerId;
-    order.ngoId = userId;  // Assign NGO user to the order
+    order.ngoId = ngoId;  // Assign NGO user to the order
     await order.save();
 
-    // Fetch the populated order details, including the ngoUser information
+    // Fetch the populated order details
     const populatedOrder = await Order.findById(orderId)
         .populate("ngoId", "firstName lastName address")  // Populate NGO user details
         .populate("volunteerId", "firstName lastName phone email")  // Populate volunteer details
         .populate("userId", "firstName lastName phone email"); // Populate user details
-
-    console.log(populatedOrder); // Log to debug
 
     res.status(200).json({
         success: true,
@@ -106,23 +103,16 @@ export const acceptOrder = catchAsyncErrors(async (req, res, next) => {
 
 
 
-// Get accepted orders for volunteers by their pincode
+// Get accepted orders for volunteers (assigned to them)
 export const getAcceptedOrdersForVolunteer = catchAsyncErrors(async (req, res, next) => {
     const volunteerId = req.user._id; // Get logged-in volunteer's ID
 
-    // Fetch volunteer details to get the pincode
-    const volunteer = await User.findById(volunteerId);
-    if (!volunteer) {
-        return next(new ErrorHandler("Volunteer not found!", 404));
-    }
-
-    const orders = await Order.find({ pincode: volunteer.pincode, status: "Accepted" })
+    const orders = await Order.find({ volunteerId, status: "Accepted" })
         .populate("userId", "firstName lastName phone email")
-        .populate("volunteerId", "firstName lastName phone email")
         .populate("ngoId", "firstName lastName address");
 
     if (!orders.length) {
-        return next(new ErrorHandler("No accepted orders found in this pincode!", 404));
+        return next(new ErrorHandler("No accepted food requests assigned to you!", 404));
     }
 
     res.status(200).json({
@@ -140,8 +130,13 @@ export const completeOrder = catchAsyncErrors(async (req, res, next) => {
         return next(new ErrorHandler("Order not found!", 404));
     }
 
+    // Ensure the logged-in volunteer is the one assigned to this order
+    if (!order.volunteerId || order.volunteerId.toString() !== req.user._id.toString()) {
+        return next(new ErrorHandler("You are not authorized to complete this order", 403));
+    }
+
     if (order.status !== "Accepted") {
-        return next(new ErrorHandler("Order cannot be completed!", 400));
+        return next(new ErrorHandler("Only accepted orders can be marked as completed", 400));
     }
 
     order.status = "Completed";
@@ -149,7 +144,7 @@ export const completeOrder = catchAsyncErrors(async (req, res, next) => {
 
     res.status(200).json({
         success: true,
-        message: "Order marked as completed!",
+        message: "Order marked as completed successfully!",
         order
     });
 });
@@ -198,25 +193,22 @@ export const getCompletedOrdersByVolunteer = catchAsyncErrors(async (req, res, n
     });
   });
   
-  export const getOrderHistory = async (req, res) => {
-    try {
-      // Get the NGO ID from the logged-in user (assuming it's in the session or JWT)
-      const ngoId = req.user.id; // Assuming `req.user.ngoId` stores the NGO's ID
-  
-      if (!ngoId) {
-        return res.status(400).json({ message: "NGO not found" });
-      }
-  
-      // Fetch the orders accepted by this NGO
-      const orders = await Order.find({ ngoId }).populate('userId ngoId', 'firstName lastName address'); // Populate user and ngo details
-  
-      if (orders.length === 0) {
-        return res.status(404).json({ message: "No orders found for this NGO." });
-      }
-  
-      return res.json({ orders });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: "Server error. Please try again later." });
+// Get order history for NGO
+export const getOrderHistory = catchAsyncErrors(async (req, res, next) => {
+    const ngoId = req.user._id;
+
+    const orders = await Order.find({ ngoId })
+        .populate("userId", "firstName lastName address phone email")
+        .populate("ngoId", "firstName lastName address")
+        .populate("volunteerId", "firstName lastName phone email")
+        .sort({ createdAt: -1 });
+
+    if (!orders.length) {
+        return next(new ErrorHandler("No order history found for this NGO.", 404));
     }
-  };
+
+    res.status(200).json({
+        success: true,
+        orders
+    });
+});

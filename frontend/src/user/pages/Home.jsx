@@ -7,9 +7,11 @@ import {
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import DonationModal from "./DonationModal"; // Import the modal
 
 const Home = () => {
   const [activeCategory, setActiveCategory] = useState("all");
+  const [isDonationModalOpen, setIsDonationModalOpen] = useState(false); // State for modal
   const navigate = useNavigate(); // ✅ THIS IS CORRECT PLACE
 
   const newsCategories = [
@@ -19,6 +21,14 @@ const Home = () => {
     { id: "environment", name: "Environment" },
     { id: "health", name: "Health" },
   ];
+
+  const handleDonationClick = (title) => {
+    if (title === "Money Donation") {
+      setIsDonationModalOpen(true);
+    } else if (title === "Food Donation") {
+      navigate("/donate");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -140,6 +150,7 @@ const Home = () => {
               <motion.div
                 key={index}
                 whileHover={{ y: -10 }}
+                onClick={() => handleDonationClick(item.title)}
                 className={`${item.color} rounded-2xl p-8 text-center shadow-md hover:shadow-xl transition-all cursor-pointer`}
               >
                 <div className="flex justify-center mb-6">{item.icon}</div>
@@ -148,13 +159,19 @@ const Home = () => {
                 </h3>
                 <p className="text-gray-600 mb-6">{item.desc}</p>
                 <button className="bg-emerald-500 text-white px-6 py-2 rounded-full font-medium hover:bg-emerald-600 transition">
-                  Learn More
+                  {item.title === "Money Donation" ? "Donate Now" : "Learn More"}
                 </button>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
+
+      {/* Donation Modal */}
+      <DonationModal
+        isOpen={isDonationModalOpen}
+        onClose={() => setIsDonationModalOpen(false)}
+      />
 
       {/* News Section */}
       <section className="py-16 bg-gray-100">

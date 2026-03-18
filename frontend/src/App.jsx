@@ -31,6 +31,8 @@ import VolunteerHistory from "./Volunteer/pages/History";
 import VolunteerSignUp from "./Volunteer/pages/SignUp";
 
 
+import { Toaster } from "react-hot-toast";
+
 function App() {
 
   const { isAuthenticated, role } = useContext(AuthContext);
@@ -63,10 +65,9 @@ function App() {
     return children;
   };
 
-
   return (
     <Router>
-
+      <Toaster position="top-center" reverseOrder={false} />
       {renderNavbar()}
 
       <Routes>

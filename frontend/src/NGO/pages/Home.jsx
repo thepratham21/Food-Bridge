@@ -29,7 +29,7 @@ const Home = () => {
     const fetchOrders = async () => {
       try {
         const response = await fetch(
-          "http://localhost:4000/api/v1/order/ngo/orders",
+          `${import.meta.env.VITE_BACKEND_URL}/order/ngo/orders`,
           {
             method: "GET",
             credentials: "include",
@@ -52,7 +52,7 @@ const Home = () => {
     const fetchVolunteers = async () => {
       try {
         const response = await fetch(
-          "http://localhost:4000/api/v1/user/volunteers",
+          `${import.meta.env.VITE_BACKEND_URL}/user/volunteers`,
           {
             method: "GET",
             credentials: "include",
@@ -89,7 +89,7 @@ const Home = () => {
       if (!userId) return alert("User not authenticated.");
 
       const response = await fetch(
-        "http://localhost:4000/api/v1/order/accept",
+        `${import.meta.env.VITE_BACKEND_URL}/order/accept`,
         {
           method: "PUT",
           credentials: "include",
@@ -112,7 +112,7 @@ const Home = () => {
 
       // Refresh orders
       const refreshResponse = await fetch(
-        "http://localhost:4000/api/v1/order/ngo/orders",
+        `${import.meta.env.VITE_BACKEND_URL}/order/ngo/orders`,
         {
           method: "GET",
           credentials: "include",
@@ -130,7 +130,7 @@ const Home = () => {
 
   const handleLogout = async () => {
     try {
-      await fetch("http://localhost:4000/api/v1/user/logout", {
+      await fetch(`${import.meta.env.VITE_BACKEND_URL}/user/logout`, {
         method: "GET",
         credentials: "include",
       });

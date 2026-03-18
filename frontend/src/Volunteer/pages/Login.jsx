@@ -36,11 +36,11 @@ const Login = () => {
 
     try {
       const response = await axios.post(
-        'http://localhost:4000/api/v1/user/login',
-        { email, password, role: 'Volunteer' },
+        `${import.meta.env.VITE_BACKEND_URL}/user/login`,
+        { email, password, role: "Volunteer" },
         {
           withCredentials: true,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { "Content-Type": "application/json" },
         }
       );
 

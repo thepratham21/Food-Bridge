@@ -8,7 +8,7 @@ const History = () => {
   useEffect(() => {
     const fetchCompletedOrders = async () => {
       try {
-        const response = await fetch('http://localhost:4000/api/v1/order/volunteer/history', {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/order/volunteer/history`, {
           method: 'GET',
           credentials: 'include', // Ensure cookies are sent (if using session or JWT cookies)
           headers: {

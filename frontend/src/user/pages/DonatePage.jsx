@@ -68,7 +68,7 @@ const DonatePage = () => {
         role: user?.role || "User"
       };
 
-      const response = await fetch("http://localhost:4000/api/v1/order/place", {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/order/place`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

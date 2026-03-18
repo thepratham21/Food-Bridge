@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }) => {
       try {
 
         const response = await axios.get(
-          "http://localhost:4000/api/v1/user/me",
+          `${import.meta.env.VITE_BACKEND_URL}/user/me`,
           { withCredentials: true }
         );
 
@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await axios.get(
-        "http://localhost:4000/api/v1/user/logout",
+        `${import.meta.env.VITE_BACKEND_URL}/user/logout`,
         { withCredentials: true }
       );
     } catch (error) {

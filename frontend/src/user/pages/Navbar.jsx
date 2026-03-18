@@ -26,7 +26,7 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      await axios.get("http://localhost:4000/api/v1/user/logout", {
+      await axios.get(`${import.meta.env.VITE_BACKEND_URL}/user/logout`, {
         withCredentials: true,
       });
       logout(); // call context logout
@@ -59,8 +59,8 @@ const Navbar = () => {
   // Navigation items
   const navItems = [
     { path: "/user/dashboard", icon: <FaHome />, label: "Home" },
-    { path: "/donate", icon: <FaHandHoldingHeart />, label: "Donate" },
-    { path: "/history", icon: <FaHistory />, label: "History" },
+    { path: "/user/donate", icon: <FaHandHoldingHeart />, label: "Donate" },
+    { path: "/user/history", icon: <FaHistory />, label: "History" },
   ];
 
   return (

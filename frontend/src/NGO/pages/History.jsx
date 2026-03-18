@@ -19,7 +19,7 @@ const History = () => {
     const fetchOrderHistory = async () => {
       try {
         setLoading(true);
-        const response = await fetch("http://localhost:4000/api/v1/order/ngo/history", {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/order/ngo/history`, {
           method: "GET",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -87,7 +87,7 @@ const History = () => {
       try {
         setLoading(true);
         setError("");
-        const response = await fetch("http://localhost:4000/api/v1/order/ngo/history", {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/order/ngo/history`, {
           method: "GET",
           credentials: "include",
           headers: { "Content-Type": "application/json" },

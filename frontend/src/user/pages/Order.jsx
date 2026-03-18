@@ -60,7 +60,7 @@ const Order = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:4000/api/v1/order/place",
+        `${import.meta.env.VITE_BACKEND_URL}/order/place`,
         {
           method: "POST",
           headers: {

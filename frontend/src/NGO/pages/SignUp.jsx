@@ -11,6 +11,7 @@ import {
   FiTarget,
 } from "react-icons/fi";
 import { motion } from "framer-motion";
+import axios from "axios";
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
@@ -80,22 +81,16 @@ const SignUp = () => {
     }
 
     try {
-      const response = await fetch(
-        "http://localhost:4000/api/v1/user/register",
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/user/register`,
+        formData,
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
+          withCredentials: true,
+          headers: { "Content-Type": "application/json" },
         }
       );
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to register");
-      }
+      const data = response.data;
 
       navigate("/", {
         state: { success: "Registration successful! Please login." },

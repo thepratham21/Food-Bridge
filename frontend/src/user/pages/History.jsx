@@ -12,7 +12,8 @@ import {
   FaFilter,
   FaSearch,
   FaSort,
-  FaTimes
+  FaTimes,
+  FaHandHoldingUsd
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -21,65 +22,68 @@ const History = () => {
   const { user } = useContext(AuthContext);
 
   const [history, setHistory] = useState([]);
-  const [filteredHistory, setFilteredHistory] = useState([]);
+  const [donations, setDonations] = useState([]);
+  const [view, setView] = useState("food"); // "food" or "money"
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [sortOption, setSortOption] = useState("newest");
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
-    const fetchOrders = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get("http://localhost:4000/api/v1/order/orders", {
+        // Fetch food orders
+        const orderResponse = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/order/orders`, {
           withCredentials: true,
         });
+        setHistory(orderResponse.data.orders || []);
 
-        setHistory(response.data.orders || []);
-        setFilteredHistory(response.data.orders || []);
+        // Fetch donations
+        const donationResponse = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/donation/user-donations`, {
+          withCredentials: true,
+        });
+        setDonations(donationResponse.data.donations || []);
+
         setLoading(false);
       } catch (err) {
-        setError("Failed to load orders. Please try again later.");
+        setError("Failed to load history. Please try again later.");
         setLoading(false);
       }
     };
 
-    fetchOrders();
-  }, [user?.id]);
+    fetchData();
+  }, [user?._id, user?.id]);
 
-  useEffect(() => {
-    // Apply filters and sorting
-    let result = [...history];
+  const filteredHistory = history.filter(order => {
+    const term = searchTerm.toLowerCase();
+    const matchesSearch = order.foodDetails.toLowerCase().includes(term) ||
+      (order.ngoId && `${order.ngoId.firstName} ${order.ngoId.lastName}`.toLowerCase().includes(term)) ||
+      order.address.toLowerCase().includes(term);
     
-    // Apply search filter
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter(order => 
-        order.foodDetails.toLowerCase().includes(term) ||
-        (order.ngoId && `${order.ngoId.firstName} ${order.ngoId.lastName}`.toLowerCase().includes(term)) ||
-        order.address.toLowerCase().includes(term)
-      );
-    }
+    const matchesStatus = statusFilter === "All" || order.status === statusFilter;
     
-    // Apply status filter
-    if (statusFilter !== "All") {
-      result = result.filter(order => order.status === statusFilter);
-    }
-    
-    // Apply sorting
-    if (sortOption === "newest") {
-      result.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    } else if (sortOption === "oldest") {
-      result.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-    }
-    
-    setFilteredHistory(result);
-  }, [searchTerm, statusFilter, sortOption, history]);
+    return matchesSearch && matchesStatus;
+  }).sort((a, b) => {
+    if (sortOption === "newest") return new Date(b.createdAt) - new Date(a.createdAt);
+    return new Date(a.createdAt) - new Date(b.createdAt);
+  });
+
+  const filteredDonations = donations.filter(donation => {
+    const term = searchTerm.toLowerCase();
+    return donation.donorName.toLowerCase().includes(term) ||
+      donation.orderId.toLowerCase().includes(term);
+  }).sort((a, b) => {
+    if (sortOption === "newest") return new Date(b.createdAt) - new Date(a.createdAt);
+    return new Date(a.createdAt) - new Date(b.createdAt);
+  });
 
   const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "N/A";
     const options = { 
       year: 'numeric', 
       month: 'short', 
@@ -87,7 +91,7 @@ const History = () => {
       hour: '2-digit',
       minute: '2-digit'
     };
-    return new Date(dateString).toLocaleDateString(undefined, options);
+    return date.toLocaleDateString(undefined, options);
   };
 
   const getStatusBadge = (status) => {
@@ -116,38 +120,69 @@ const History = () => {
   };
 
   const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
+    setSelectedOrder(null);
   };
 
   const handleOrderSelect = (order) => {
     setSelectedOrder(order);
-    toggleSidebar();
   };
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pb-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <div className="py-10 text-center">
-          <h1 className="text-4xl font-bold text-gray-800 mb-3">Donation History</h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Track and manage all your food donation activities in one place
-          </p>
+        <div className="py-10 flex flex-col md:flex-row justify-between items-center gap-6">
+          <div className="text-center md:text-left">
+            <h1 className="text-4xl font-bold text-gray-800 mb-3">Your Contributions</h1>
+            <p className="text-gray-600 max-w-2xl">
+              Track and manage all your food and monetary donations in one place
+            </p>
+          </div>
+          
+          <div className="flex bg-white p-1.5 rounded-2xl shadow-sm border border-gray-200">
+            <button
+              onClick={() => setView("food")}
+              className={`px-8 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 ${
+                view === "food" 
+                  ? "bg-emerald-500 text-white shadow-lg" 
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              <FaUtensils />
+              Food
+            </button>
+            <button
+              onClick={() => setView("money")}
+              className={`px-8 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 ${
+                view === "money" 
+                  ? "bg-emerald-500 text-white shadow-lg" 
+                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              <FaHandHoldingUsd />
+              Money
+            </button>
+          </div>
         </div>
 
         {/* Stats Summary */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
-          {Object.entries(statusCounts).map(([status, count]) => (
+          {(view === "food" ? Object.entries(statusCounts) : [
+            ["Total", donations.length],
+            ["Total Amount", `₹${donations.reduce((acc, d) => acc + d.amount, 0)}`],
+            ["Avg. Donation", donations.length > 0 ? `₹${Math.round(donations.reduce((acc, d) => acc + d.amount, 0) / donations.length)}` : "₹0"],
+            ["This Month", donations.filter(d => new Date(d.createdAt) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length],
+          ]).map(([status, count]) => (
             <motion.div 
               key={status}
               whileHover={{ y: -5 }}
               className={`bg-white rounded-xl shadow-sm p-4 text-center cursor-pointer ${
-                statusFilter === status ? "ring-2 ring-emerald-500" : ""
+                statusFilter === status && view === "food" ? "ring-2 ring-emerald-500" : ""
               }`}
-              onClick={() => setStatusFilter(status)}
+              onClick={() => view === "food" && setStatusFilter(status)}
             >
-              <p className="text-sm text-gray-600">{status}</p>
+              <p className="text-sm text-gray-600 truncate">{status}</p>
               <p className={`text-2xl font-bold ${
-                status === "Completed" ? "text-green-600" :
+                status === "Completed" || status === "Total Amount" ? "text-green-600" :
                 status === "Pending" ? "text-yellow-600" :
                 status === "Cancelled" ? "text-red-600" : "text-gray-800"
               }`}>
@@ -166,7 +201,7 @@ const History = () => {
               </div>
               <input
                 type="text"
-                placeholder="Search orders..."
+                placeholder={`Search ${view === "food" ? "orders" : "donations"}...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
@@ -174,23 +209,25 @@ const History = () => {
             </div>
 
             <div className="flex gap-3">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaFilter className="text-gray-400" />
+              {view === "food" && (
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FaFilter className="text-gray-400" />
+                  </div>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent appearance-none"
+                  >
+                    <option value="All">All Statuses</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Accepted">Accepted</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                  </select>
                 </div>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="pl-10 pr-8 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent appearance-none"
-                >
-                  <option value="All">All Statuses</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Accepted">Accepted</option>
-                  <option value="Delivered">Delivered</option>
-                  <option value="Completed">Completed</option>
-                  <option value="Cancelled">Cancelled</option>
-                </select>
-              </div>
+              )}
 
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -248,24 +285,24 @@ const History = () => {
         )}
 
         {/* Empty State */}
-        {!loading && !error && filteredHistory.length === 0 && (
+        {!loading && !error && (view === "food" ? filteredHistory.length === 0 : filteredDonations.length === 0) && (
           <div className="bg-white rounded-xl shadow-sm p-12 text-center">
             <div className="mx-auto flex justify-center mb-4">
               <div className="bg-gray-100 p-4 rounded-full">
                 <FaInfoCircle className="text-gray-400 text-3xl" />
               </div>
             </div>
-            <h3 className="text-xl font-medium text-gray-900 mb-1">No orders found</h3>
+            <h3 className="text-xl font-medium text-gray-900 mb-1">No {view === "food" ? "orders" : "donations"} found</h3>
             <p className="text-gray-500 max-w-md mx-auto">
-              {history.length === 0
-                ? "You don't have any orders in your history yet."
-                : "No orders match your current filters. Try adjusting your search or filters."}
+              {view === "food" 
+                ? (history.length === 0 ? "You don't have any orders in your history yet." : "No orders match your current filters.")
+                : (donations.length === 0 ? "You haven't made any monetary donations yet." : "No donations match your current search.")}
             </p>
           </div>
         )}
 
         {/* Orders Grid */}
-        {!loading && !error && filteredHistory.length > 0 && (
+        {!loading && !error && view === "food" && filteredHistory.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredHistory.map((order) => (
               <motion.div
@@ -351,6 +388,57 @@ const History = () => {
                     </button>
                   </div>
                 </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+
+        {/* Money Donations List */}
+        {!loading && !error && view === "money" && filteredDonations.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredDonations.map((donation) => (
+              <motion.div
+                key={donation._id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ y: -5 }}
+                className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between hover:shadow-md transition-all"
+              >
+                <div>
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="bg-emerald-50 p-4 rounded-2xl text-emerald-600">
+                      <FaHandHoldingUsd size={28} />
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className="bg-green-100 text-green-700 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider mb-2">
+                        Success
+                      </span>
+                      <p className="text-[10px] text-gray-400 font-mono">#{donation.orderId.substring(0, 12)}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-6">
+                    <p className="text-gray-500 text-sm mb-1">Donation Amount</p>
+                    <h3 className="text-3xl font-bold text-gray-800">
+                      ₹{donation.amount}
+                    </h3>
+                  </div>
+                  
+                  <div className="space-y-3 pt-4 border-t border-gray-50">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Date & Time</span>
+                      <span className="font-semibold text-gray-700">{formatDate(donation.createdAt)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Payment ID</span>
+                      <span className="font-mono text-gray-600">{donation.paymentId?.substring(0, 12)}...</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <button className="mt-8 w-full py-3 bg-gray-50 text-emerald-600 rounded-xl hover:bg-emerald-50 hover:text-emerald-700 transition font-bold text-sm">
+                  Download Receipt
+                </button>
               </motion.div>
             ))}
           </div>
@@ -451,7 +539,7 @@ const History = () => {
                         {selectedOrder.ngoId ? (
                           <>
                             <p className="font-medium">{selectedOrder.ngoId.firstName} {selectedOrder.ngoId.lastName}</p>
-                            <p className="text-gray-600 mb-2">{selectedOrder.ngoId.organizationName}</p>
+                            <p className="text-gray-600 mb-2">{selectedOrder.ngoId.ngoDetails?.name}</p>
                             <p className="text-sm mb-1">{selectedOrder.ngoId.email}</p>
                             <p className="text-sm">{selectedOrder.ngoId.phone}</p>
                             <p className="mt-3 text-sm font-medium">Address:</p>

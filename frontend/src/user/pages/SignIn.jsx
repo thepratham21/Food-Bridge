@@ -42,7 +42,7 @@ const SignIn = () => {
 
     try {
       const response = await axios.post(
-        'http://localhost:4000/api/v1/user/register',
+        `${import.meta.env.VITE_BACKEND_URL}/user/register`,
         formData,
         {
           headers: {
