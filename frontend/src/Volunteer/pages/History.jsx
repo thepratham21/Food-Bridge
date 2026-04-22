@@ -61,25 +61,39 @@ const History = () => {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
-      <div className="bg-emerald-900 text-white pt-20 pb-32 px-6">
+      <div className="bg-emerald-900 text-white pt-20 pb-36 px-6">
         <div className="container mx-auto max-w-6xl">
-          <div className="flex items-center gap-4 mb-8">
-            <button 
-              onClick={() => navigate("/volunteer/home")}
+          <div className="flex items-center gap-4 mb-10">
+            <button
+              onClick={() => navigate("/volunteer/dashboard")}
               className="p-3 bg-white/10 rounded-2xl hover:bg-white/20 transition-all"
             >
               <FiArrowLeft className="text-2xl" />
             </button>
             <div>
               <h1 className="text-4xl font-black tracking-tighter">Delivery History</h1>
-              <p className="text-emerald-400 font-bold">You've completed {completedOrders.length} missions so far!</p>
+              <p className="text-emerald-400 font-bold">Every completed mission is a life touched.</p>
             </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { label: "Missions Completed", value: completedOrders.length, icon: "🎯" },
+              { label: "Meals Delivered", value: completedOrders.reduce((a, o) => a + (o.quantity || 0), 0), icon: "🍽️" },
+              { label: "Impact Points", value: completedOrders.length * 10, icon: "⭐" },
+              { label: "NGOs Served", value: [...new Set(completedOrders.map(o => o.ngoId?._id).filter(Boolean))].length, icon: "🏥" },
+            ].map((s, i) => (
+              <div key={i} className="bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/10">
+                <div className="text-2xl mb-2">{s.icon}</div>
+                <p className="text-3xl font-black text-white">{s.value}</p>
+                <p className="text-emerald-400 text-xs font-bold uppercase tracking-widest mt-1">{s.label}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto max-w-6xl px-6 -mt-16">
+      <div className="container mx-auto max-w-6xl px-6 -mt-20">
         {/* Controls */}
         <div className="bg-white rounded-[2.5rem] shadow-xl p-8 mb-10 flex flex-col md:flex-row gap-6 border border-gray-100">
           <div className="relative flex-1">

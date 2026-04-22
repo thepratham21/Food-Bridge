@@ -25,8 +25,8 @@ const DonatePage = () => {
     foodType: "",
     quantity: "",
     description: "",
-    address: "",
-    pincode: "",
+    address: user?.address || "",
+    pincode: user?.pincode || "",
     date: "",
     time: "afternoon",
     instructions: "",
@@ -73,8 +73,6 @@ const DonatePage = () => {
         foodType: formData.foodCategory || "Veg",
         foodStyle: formData.foodStyle || "Cooked Food"
       };
-
-      console.log("Submitting order data:", orderData);
 
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/order/place`, {
         method: "POST",
@@ -191,7 +189,7 @@ const DonatePage = () => {
             {/* Form Steps */}
             <AnimatePresence mode="wait">
               {step === 1 && (
-                <motion.div 
+                <motion.div
                   key="step1"
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -208,17 +206,17 @@ const DonatePage = () => {
                         className="w-full p-5 bg-gray-50 border-2 border-transparent focus:border-emerald-500 rounded-2xl font-bold outline-none transition-all appearance-none"
                       >
                         <option value="">Select food type</option>
-                        <option value="fruits">Fruits & Vegetables</option>
-                        <option value="grains">Grains & Bread</option>
-                        <option value="dairy">Dairy Products</option>
-                        <option value="cooked">Cooked Meals</option>
-                        <option value="packaged">Packaged Food</option>
-                        <option value="other">Other</option>
+                        <option value="Fruits & Vegetables">Fruits & Vegetables</option>
+                        <option value="Grains & Bread">Grains & Bread</option>
+                        <option value="Dairy Products">Dairy Products</option>
+                        <option value="Cooked Meals">Cooked Meals</option>
+                        <option value="Packaged Food">Packaged Food</option>
+                        <option value="Other">Other</option>
                       </select>
                     </div>
-                    
+
                     <div className="space-y-3">
-                      <label className="text-sm font-black text-gray-400 uppercase tracking-widest">Quantity</label>
+                      <label className="text-sm font-black text-gray-400 uppercase tracking-widest">Quantity (servings)</label>
                       <select
                         name="quantity"
                         value={formData.quantity}
@@ -226,11 +224,55 @@ const DonatePage = () => {
                         className="w-full p-5 bg-gray-50 border-2 border-transparent focus:border-emerald-500 rounded-2xl font-bold outline-none transition-all appearance-none"
                       >
                         <option value="">Select quantity</option>
-                        <option value="5">1-5 servings</option>
-                        <option value="20">6-20 servings</option>
-                        <option value="50">21-50 servings</option>
+                        <option value="5">1–5 servings</option>
+                        <option value="20">6–20 servings</option>
+                        <option value="50">21–50 servings</option>
                         <option value="100">50+ servings</option>
                       </select>
+                    </div>
+                  </div>
+
+                  {/* Veg / Non-veg toggle */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-black text-gray-400 uppercase tracking-widest">Diet Type</label>
+                    <div className="flex gap-4">
+                      {["Veg", "Non-veg"].map(type => (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => setFormData(p => ({ ...p, foodCategory: type }))}
+                          className={`flex-1 py-4 rounded-2xl font-black text-sm border-2 transition-all ${
+                            formData.foodCategory === type
+                              ? type === "Veg"
+                                ? "bg-green-500 border-green-500 text-white shadow-lg shadow-green-100"
+                                : "bg-red-500 border-red-500 text-white shadow-lg shadow-red-100"
+                              : "bg-gray-50 border-transparent text-gray-500 hover:border-gray-200"
+                          }`}
+                        >
+                          {type === "Veg" ? "🌿 Vegetarian" : "🍗 Non-Vegetarian"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Raw / Cooked toggle */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-black text-gray-400 uppercase tracking-widest">Food Style</label>
+                    <div className="flex gap-4">
+                      {["Cooked Food", "Raw Food"].map(style => (
+                        <button
+                          key={style}
+                          type="button"
+                          onClick={() => setFormData(p => ({ ...p, foodStyle: style }))}
+                          className={`flex-1 py-4 rounded-2xl font-black text-sm border-2 transition-all ${
+                            formData.foodStyle === style
+                              ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-100"
+                              : "bg-gray-50 border-transparent text-gray-500 hover:border-gray-200"
+                          }`}
+                        >
+                          {style === "Cooked Food" ? "🍲 Cooked Food" : "🥦 Raw / Uncooked"}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
@@ -240,17 +282,17 @@ const DonatePage = () => {
                       name="description"
                       value={formData.description}
                       onChange={handleChange}
-                      placeholder="e.g. 5 boxes of fresh vegetable biryani..."
-                      className="w-full p-5 bg-gray-50 border-2 border-transparent focus:border-emerald-500 rounded-2xl font-bold outline-none transition-all min-h-[150px]"
+                      placeholder="e.g. 5 boxes of fresh vegetable biryani, still hot..."
+                      className="w-full p-5 bg-gray-50 border-2 border-transparent focus:border-emerald-500 rounded-2xl font-bold outline-none transition-all min-h-[130px] resize-none"
                     />
                   </div>
 
-                  <button 
+                  <button
                     onClick={nextStep}
                     disabled={!formData.foodType || !formData.quantity}
-                    className="w-full py-5 bg-emerald-600 text-white font-black text-xl rounded-2xl shadow-xl shadow-emerald-100 hover:bg-emerald-700 disabled:opacity-50 transition-all active:scale-95"
+                    className="w-full py-5 bg-emerald-600 text-white font-black text-xl rounded-2xl shadow-xl shadow-emerald-100 hover:bg-emerald-700 disabled:opacity-50 transition-all active:scale-95 flex items-center justify-center gap-3"
                   >
-                    Next Step
+                    Next Step <FaArrowRight />
                   </button>
                 </motion.div>
               )}
@@ -354,18 +396,54 @@ const DonatePage = () => {
               )}
 
               {step === 4 && (
-                <motion.div 
+                <motion.div
                   key="step4"
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
-                  className="text-center py-10"
+                  className="text-center py-8"
                 >
-                  <div className="w-32 h-32 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-8">
-                    <FaCheck className="text-5xl" />
-                  </div>
-                  <h2 className="text-5xl font-black text-gray-900 mb-6">Thank You!</h2>
-                  <p className="text-xl text-gray-500 font-medium mb-10 max-w-md mx-auto">Your donation has been scheduled. A volunteer will contact you shortly for pickup.</p>
-                  <button onClick={() => setDonationType(null)} className="px-10 py-5 bg-gray-900 text-white font-black text-lg rounded-2xl hover:bg-gray-800 transition-all active:scale-95">Return to Dashboard</button>
+                  <motion.div
+                    animate={{ rotate: [0, -10, 10, -10, 10, 0], scale: [1, 1.1, 1] }}
+                    transition={{ duration: 0.8, delay: 0.2 }}
+                    className="text-8xl mb-6"
+                  >
+                    🎉
+                  </motion.div>
+                  <motion.h2
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="text-5xl font-black text-gray-900 mb-4"
+                  >
+                    You're a Hero!
+                  </motion.h2>
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5 }}
+                    className="text-xl text-gray-500 font-medium mb-10 max-w-md mx-auto leading-relaxed"
+                  >
+                    Your donation has been scheduled. An NGO will review it and a volunteer will be in touch for pickup. Check your email for confirmation.
+                  </motion.p>
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    className="flex flex-col sm:flex-row gap-4 justify-center"
+                  >
+                    <button
+                      onClick={() => { setDonationType(null); setStep(1); }}
+                      className="px-10 py-5 bg-emerald-600 text-white font-black text-lg rounded-2xl hover:bg-emerald-700 transition-all active:scale-95 shadow-xl shadow-emerald-100"
+                    >
+                      Donate Again
+                    </button>
+                    <button
+                      onClick={() => window.location.href = '/user/history'}
+                      className="px-10 py-5 bg-gray-100 text-gray-700 font-black text-lg rounded-2xl hover:bg-gray-200 transition-all active:scale-95"
+                    >
+                      View My History
+                    </button>
+                  </motion.div>
                 </motion.div>
               )}
             </AnimatePresence>

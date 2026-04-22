@@ -90,15 +90,21 @@ export const verifyDonation = catchAsyncErrors(async (req, res, next) => {
 
 
 // GET USER DONATIONS
-
 export const getUserDonations = catchAsyncErrors(async (req, res, next) => {
     const userId = req.user._id;
+    const donations = await Donation.find({ userId, status: "success" }).sort({ createdAt: -1 });
+    res.status(200).json({ success: true, donations });
+});
 
-    const donations = await Donation.find({ userId, status: "success" })
-        .sort({ createdAt: -1 });
-
+// GET PLATFORM DONATION STATS (for NGO dashboard)
+export const getDonationStats = catchAsyncErrors(async (req, res, next) => {
+    const result = await Donation.aggregate([
+        { $match: { status: "success" } },
+        { $group: { _id: null, total: { $sum: "$amount" }, count: { $sum: 1 } } }
+    ]);
     res.status(200).json({
         success: true,
-        donations
+        totalAmount: result[0]?.total || 0,
+        totalCount: result[0]?.count || 0,
     });
 });

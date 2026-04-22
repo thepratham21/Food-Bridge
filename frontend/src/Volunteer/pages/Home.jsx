@@ -3,10 +3,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import {
-  FiClock, FiUser, FiMapPin, FiLogOut, 
-  FiCheckCircle, FiTruck, FiNavigation, 
+  FiClock, FiUser, FiMapPin, FiLogOut,
+  FiCheckCircle, FiTruck, FiNavigation,
   FiBox, FiInfo, FiActivity, FiStar, FiAward,
-  FiArrowRight,
+  FiArrowRight, FiCalendar, FiExternalLink,
 } from "react-icons/fi";
 import { FaHandHoldingHeart, FaCrown, FaMedal } from "react-icons/fa";
 import toast from "react-hot-toast";
@@ -26,6 +26,8 @@ const Home = () => {
 
   useEffect(() => {
     fetchAllData();
+    const interval = setInterval(fetchAllData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchAllData = async () => {
@@ -183,9 +185,17 @@ const Home = () => {
                         <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-emerald-500 shrink-0 shadow-inner group-hover:scale-110 transition-transform duration-500">
                           <FiMapPin className="text-2xl" />
                         </div>
-                        <div>
+                        <div className="flex-1 min-w-0">
                           <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Pickup Address</p>
                           <p className="font-bold text-gray-800 text-lg leading-tight">{order.address}</p>
+                          <a
+                            href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.address)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 mt-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-black hover:bg-blue-700 active:scale-95 transition-all shadow-lg shadow-blue-100"
+                          >
+                            <FiNavigation className="text-sm" /> Get Directions <FiExternalLink className="text-[10px]" />
+                          </a>
                         </div>
                       </div>
 
@@ -195,9 +205,28 @@ const Home = () => {
                         </div>
                         <div>
                           <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Contact Donor</p>
-                          <p className="font-bold text-gray-800 text-lg leading-tight">{order.userId?.firstName || "Anonymous"}</p>
+                          <p className="font-bold text-gray-800 text-lg leading-tight">{order.userId?.firstName || "Anonymous"} {order.userId?.lastName || ""}</p>
+                          {order.userId?.phone && (
+                            <a href={`tel:${order.userId.phone}`} className="text-emerald-600 font-bold text-sm mt-1 flex items-center gap-1 hover:underline">
+                              📞 {order.userId.phone}
+                            </a>
+                          )}
                         </div>
                       </div>
+
+                      {order.foodtime && (
+                        <div className="flex items-start gap-5">
+                          <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-amber-500 shrink-0 shadow-inner">
+                            <FiCalendar className="text-2xl" />
+                          </div>
+                          <div>
+                            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-1">Pickup Time</p>
+                            <p className="font-bold text-gray-800 text-lg leading-tight">
+                              {new Date(order.foodtime).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="p-10 pt-0">

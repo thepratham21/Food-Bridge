@@ -8,29 +8,30 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [role, setRole] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  const fetchUser = async () => {
+    try {
+      const response = await axios.get(
+        `${import.meta.env.VITE_BACKEND_URL}/user/me`,
+        { withCredentials: true }
+      );
+
+      const userData = response.data.user || response.data;
+
+      setUser(userData);
+      setIsAuthenticated(true);
+      setRole(userData.role?.toLowerCase());
+    } catch (error) {
+      setUser(null);
+      setIsAuthenticated(false);
+      setRole(null);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-
-        const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/user/me`,
-          { withCredentials: true }
-        );
-
-        const userData = response.data.user || response.data;
-
-        setUser(userData);
-        setIsAuthenticated(true);
-        setRole(userData.role?.toLowerCase());
-
-      } catch (error) {
-        setUser(null);
-        setIsAuthenticated(false);
-        setRole(null);
-      }
-    };
-
     fetchUser();
   }, []);
 
@@ -57,7 +58,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, isAuthenticated, role, login, logout }}
+      value={{ user, isAuthenticated, role, authLoading, login, logout, refreshUser: fetchUser }}
     >
       {children}
     </AuthContext.Provider>

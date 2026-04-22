@@ -70,8 +70,6 @@ const DonationModal = ({ isOpen, onClose }) => {
         },
       };
 
-      console.log("Razorpay Key ID used:", import.meta.env.VITE_RAZORPAY_KEY_ID);
-
       if (!window.Razorpay) {
         toast.error("Razorpay SDK failed to load. Are you online?");
         setLoading(false);

@@ -47,8 +47,8 @@ const orderSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-    ngoId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // NGO is also stored in User schema
+    ngoId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     volunteerId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
-});
+}, { timestamps: true });
 
 export const Order = mongoose.model("Order", orderSchema);

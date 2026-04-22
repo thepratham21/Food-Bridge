@@ -204,7 +204,7 @@ const Home = () => {
                         My Contribution History
                       </button>
                       <button
-                        onClick={() => navigate("/user/profile")}
+                        onClick={() => navigate("/profile")}
                         className="bg-emerald-500/30 backdrop-blur-md border border-white/20 text-white px-8 py-3 rounded-2xl font-bold hover:bg-emerald-500/50 transition"
                       >
                         Edit Profile

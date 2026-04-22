@@ -1,9 +1,11 @@
 import express from "express";
-import { 
-    placeOrder, 
-    getOrdersForNGO, 
-    acceptOrder, 
-    getAcceptedOrdersForVolunteer, 
+import {
+    placeOrder,
+    getOrdersForNGO,
+    acceptOrder,
+    rejectOrder,
+    cancelOrder,
+    getAcceptedOrdersForVolunteer,
     completeOrder,
     getAllOrdersByUser,
     getCompletedOrdersByVolunteer,
@@ -21,6 +23,12 @@ router.get("/ngo/orders", isAuthenticated,getOrdersForNGO);
 
 // 📌 Route for NGOs to accept an order and assign a volunteer
 router.put("/accept", isAuthenticated, acceptOrder);
+
+// 📌 Route for NGOs to reject an order
+router.put("/reject", isAuthenticated, rejectOrder);
+
+// 📌 Route for donors to cancel their own pending order
+router.put("/cancel", isAuthenticated, cancelOrder);
 
 // 📌 Route for volunteers to fetch accepted orders in their pincode
 router.get("/volunteer/orders", isAuthenticated, getAcceptedOrdersForVolunteer);

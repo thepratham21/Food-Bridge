@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from "react-router-dom";
+import toast from 'react-hot-toast';
 import { FiUser, FiMail, FiPhone, FiMapPin, FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 
@@ -44,16 +45,12 @@ const SignIn = () => {
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/user/register`,
         formData,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
+        { withCredentials: true, headers: { 'Content-Type': 'application/json' } }
       );
-      
+
       if (response.data.success) {
-        alert('User registered successfully!');
-        navigate('/');
+        toast.success('Account created! Please log in.');
+        navigate('/user/login');
       } else {
         setError(response.data.message || 'Registration failed');
       }

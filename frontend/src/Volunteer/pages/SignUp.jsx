@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const SignUp = () => {
   const [formData, setFormData] = useState({
@@ -12,8 +13,8 @@ const SignUp = () => {
     role: 'Volunteer',
     experience: '',
     skills: '',
-    availability: 'Full-time',  // Default to "Full-time"
-    vehicle: false,  // Default to false
+    availability: 'Full-time',
+    vehicle: false,
     pincode: '',
   });
 
@@ -29,24 +30,29 @@ const SignUp = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const { availability, vehicle, ...rest } = formData;
+      const payload = {
+        ...rest,
+        volunteerDetails: { availability, vehicle },
+      };
+
       const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/user/register`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(payload),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to register');
+        throw new Error(data.message || 'Failed to register');
       }
 
-      const data = await response.json();
-      alert('Volunteer registered successfully!');
-      navigate('/');
+      toast.success('Account created! Please log in.');
+      navigate('/volunteer/login');
     } catch (error) {
-      alert('Error registering volunteer. Please try again.');
-      console.error(error);
+      toast.error(error.message || 'Error registering. Please try again.');
     }
   };
 
@@ -55,7 +61,7 @@ const SignUp = () => {
       <div className="bg-white p-10 rounded-lg shadow-lg max-w-lg w-full">
         <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">Volunteer Sign Up</h2>
         <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
+          <div>
             <label className="block font-medium text-gray-700">First Name</label>
             <input
               type="text"
@@ -167,7 +173,6 @@ const SignUp = () => {
               <option value="Part-time">Part-time</option>
             </select>
           </div>
-
           <div>
             <label className="block font-medium text-gray-700">Do you have a vehicle?</label>
             <input
@@ -178,7 +183,6 @@ const SignUp = () => {
               className="focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
-
           <button
             type="submit"
             className="w-full bg-gradient-to-r from-green-600 to-teal-600 text-white py-3 px-4 rounded-lg font-semibold hover:from-green-700 hover:to-teal-700 focus:outline-none focus:ring-4 focus:ring-teal-300"
@@ -192,4 +196,3 @@ const SignUp = () => {
 };
 
 export default SignUp;
-

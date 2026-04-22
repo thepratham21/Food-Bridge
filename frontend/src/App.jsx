@@ -4,7 +4,6 @@ import { AuthContext } from "./context/AuthContext";
 
 // Navbars
 import UserNavbar from "./user/pages/Navbar";
-import VolunteerNavbar from "./Volunteer/pages/Navbar";
 
 // Landing Page
 import HomePage from "./HomePage";
@@ -35,7 +34,7 @@ import { Toaster } from "react-hot-toast";
 
 function App() {
 
-  const { isAuthenticated, role } = useContext(AuthContext);
+  const { isAuthenticated, role, authLoading } = useContext(AuthContext);
 
   // ================= NAVBAR HANDLER =================
   const renderNavbar = () => {
@@ -52,6 +51,17 @@ function App() {
 
   // ================= PROTECTED ROUTE =================
   const ProtectedRoute = ({ children, allowedRole }) => {
+    if (authLoading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="flex flex-col items-center gap-4">
+            <div className="animate-spin rounded-full h-14 w-14 border-4 border-emerald-200 border-t-emerald-600"></div>
+            <p className="text-emerald-700 font-bold">Loading...</p>
+          </div>
+        </div>
+      );
+    }
+
     if (!isAuthenticated) {
       return <Navigate to={`/${allowedRole}/login`} />;
     }
@@ -114,7 +124,14 @@ function App() {
           }
         />
 
-        <Route path="/user/donate" element={<DonatePage />} />
+        <Route
+          path="/user/donate"
+          element={
+            <ProtectedRoute allowedRole="user">
+              <DonatePage />
+            </ProtectedRoute>
+          }
+        />
 
 
 

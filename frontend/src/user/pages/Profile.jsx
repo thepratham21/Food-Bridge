@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user, logout, isAuthenticated } = useContext(AuthContext);
+  const { user, logout, isAuthenticated, refreshUser } = useContext(AuthContext);
 
   const [activeTab, setActiveTab] = useState('profile');
   const [editMode, setEditMode] = useState(false);
@@ -86,6 +86,7 @@ const Profile = () => {
       if (data.success) {
         toast.success('Profile updated successfully!');
         setEditMode(false);
+        refreshUser();
       }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update profile');

@@ -2,6 +2,7 @@ import { catchAsyncErrors } from "../middlewares/catchAsyncErrors.js";
 import ErrorHandler from "../middlewares/errorMiddeware.js";
 import { Order } from "../models/orderSchema.js";
 import { User } from "../models/userSchema.js";
+import { sendEmail, emailTemplates } from "../utils/sendEmail.js";
 
 // Place an order (User requests food)
 export const placeOrder = catchAsyncErrors(async (req, res, next) => {
@@ -90,6 +91,17 @@ export const acceptOrder = catchAsyncErrors(async (req, res, next) => {
         .populate("volunteerId", "firstName lastName phone email")  // Populate volunteer details
         .populate("userId", "firstName lastName phone email"); // Populate user details
 
+    await sendEmail({
+        to: populatedOrder.userId?.email,
+        subject: "✅ Your FoodBridge donation has been accepted!",
+        html: emailTemplates.accepted({
+            name: populatedOrder.userId?.firstName,
+            foodDetails: populatedOrder.foodDetails,
+            volunteerName: `${populatedOrder.volunteerId?.firstName} ${populatedOrder.volunteerId?.lastName}`,
+            volunteerPhone: populatedOrder.volunteerId?.phone,
+        }),
+    });
+
     res.status(200).json({
         success: true,
         message: "Order accepted and volunteer assigned!",
@@ -134,6 +146,16 @@ export const completeOrder = catchAsyncErrors(async (req, res, next) => {
     order.status = "Completed";
     await order.save();
 
+    const completedOrder = await Order.findById(orderId).populate("userId", "firstName email");
+    await sendEmail({
+        to: completedOrder.userId?.email,
+        subject: "🎊 Your FoodBridge donation was delivered!",
+        html: emailTemplates.completed({
+            name: completedOrder.userId?.firstName,
+            foodDetails: completedOrder.foodDetails,
+        }),
+    });
+
     res.status(200).json({
         success: true,
         message: "Order marked as completed successfully!",
@@ -177,6 +199,71 @@ export const getCompletedOrdersByVolunteer = catchAsyncErrors(async (req, res, n
     });
   });
   
+// Cancel order (User/donor cancels their own pending order)
+export const cancelOrder = catchAsyncErrors(async (req, res, next) => {
+    const { orderId } = req.body;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+        return next(new ErrorHandler("Order not found!", 404));
+    }
+
+    if (order.userId.toString() !== req.user._id.toString()) {
+        return next(new ErrorHandler("You can only cancel your own orders", 403));
+    }
+
+    if (order.status !== "Pending") {
+        return next(new ErrorHandler("Only pending orders can be cancelled", 400));
+    }
+
+    order.status = "Rejected";
+    await order.save();
+
+    res.status(200).json({
+        success: true,
+        message: "Order cancelled successfully.",
+        order
+    });
+});
+
+// Reject order (NGO action)
+export const rejectOrder = catchAsyncErrors(async (req, res, next) => {
+    const { orderId } = req.body;
+
+    if (req.user.role !== 'NGO') {
+        return next(new ErrorHandler("Only NGOs can reject orders", 403));
+    }
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+        return next(new ErrorHandler("Order not found!", 404));
+    }
+
+    if (order.status !== "Pending") {
+        return next(new ErrorHandler("Only pending orders can be rejected", 400));
+    }
+
+    order.status = "Rejected";
+    order.ngoId = req.user._id;
+    await order.save();
+
+    const rejectedOrder = await Order.findById(orderId).populate("userId", "firstName email");
+    await sendEmail({
+        to: rejectedOrder.userId?.email,
+        subject: "📋 Update on your FoodBridge donation request",
+        html: emailTemplates.rejected({
+            name: rejectedOrder.userId?.firstName,
+            foodDetails: rejectedOrder.foodDetails,
+        }),
+    });
+
+    res.status(200).json({
+        success: true,
+        message: "Order rejected.",
+        order
+    });
+});
+
 // Get order history for NGO
 export const getOrderHistory = catchAsyncErrors(async (req, res, next) => {
     const ngoId = req.user._id;

@@ -61,7 +61,7 @@ const Navbar = () => {
     { path: "/user/dashboard", icon: <FaHome />, label: "Home" },
     { path: "/user/donate", icon: <FaHandHoldingHeart />, label: "Donate" },
     { path: "/user/history", icon: <FaHistory />, label: "History" },
-    { path: "/user/profile", icon: <FaUser />, label: "Profile" },
+    { path: "/profile", icon: <FaUser />, label: "Profile" },
   ];
 
   return (
@@ -193,8 +193,8 @@ const Navbar = () => {
                             </NavLink>
                           </li>
                           <li>
-                            <NavLink 
-                              to="/settings" 
+                            <NavLink
+                              to="/profile"
                               className="block px-4 py-3 text-gray-700 hover:bg-gray-100"
                               onClick={() => setProfileDropdownOpen(false)}
                             >

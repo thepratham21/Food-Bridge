@@ -244,9 +244,9 @@ export const getAllNGOs = catchAsyncErrors(async (req, res, next) => {
 // Logout User
 export const logoutUser = catchAsyncErrors(async (req, res, next) => {
     res.status(200).cookie("Token", "", {
-        httpsOnly: true,
+        httpOnly: true,
         expires: new Date(Date.now()),
-        secure:true,
-        sameSite: "none"
+        secure: false,
+        sameSite: "lax"
     }).json({ success: true, message: "Logged Out Successfully" });
 });

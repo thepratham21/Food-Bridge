@@ -20,6 +20,7 @@ const Home = () => {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [selectedVolunteer, setSelectedVolunteer] = useState("");
   const [stats, setStats] = useState({ pending: 0, accepted: 0, completed: 0 });
+  const [donationStats, setDonationStats] = useState({ totalAmount: 0, totalCount: 0 });
   const [leaderboard, setLeaderboard] = useState(null);
   const [recentDonations, setRecentDonations] = useState([]);
 
@@ -27,6 +28,8 @@ const Home = () => {
 
   useEffect(() => {
     fetchData();
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchData = async () => {
@@ -36,19 +39,29 @@ const Home = () => {
         axios.get(`${import.meta.env.VITE_BACKEND_URL}/order/ngo/orders`, { withCredentials: true }),
         axios.get(`${import.meta.env.VITE_BACKEND_URL}/user/volunteers`, { withCredentials: true }),
         axios.get(`${import.meta.env.VITE_BACKEND_URL}/user/leaderboard`),
-        axios.get(`${import.meta.env.VITE_BACKEND_URL}/order/ngo/history`, { withCredentials: true })
+        axios.get(`${import.meta.env.VITE_BACKEND_URL}/order/ngo/history`, { withCredentials: true }),
       ]);
 
-      setOrders(ordersRes.data.orders || []);
+      const pendingOrders = ordersRes.data.orders || [];
+      const allOrders = historyRes.data.orders || [];
+
+      setOrders(pendingOrders);
       setVolunteers(volunteersRes.data.volunteers || []);
       setLeaderboard(leaderboardRes.data.leaderboard);
-      setRecentDonations((historyRes.data.orders || []).slice(0, 5));
-      
-      const counts = (ordersRes.data.orders || []).reduce((acc, order) => {
+      setRecentDonations(allOrders.slice(0, 5));
+
+      // Fetch donation stats separately so a failure doesn't break everything else
+      try {
+        const donationRes = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/donation/stats`, { withCredentials: true });
+        setDonationStats({ totalAmount: donationRes.data.totalAmount || 0, totalCount: donationRes.data.totalCount || 0 });
+      } catch (_) { /* non-critical */ }
+
+      const counts = allOrders.reduce((acc, order) => {
         const s = order.status.toLowerCase();
         acc[s] = (acc[s] || 0) + 1;
         return acc;
       }, { pending: 0, accepted: 0, completed: 0 });
+      counts.pending = pendingOrders.length;
       setStats(counts);
     } catch (err) {
       console.error("NGO Data Fetch Error:", err);
@@ -62,11 +75,7 @@ const Home = () => {
     try {
       const { data } = await axios.put(
         `${import.meta.env.VITE_BACKEND_URL}/order/accept`,
-        {
-          orderId: selectedOrder._id,
-          volunteerId: selectedVolunteer,
-          userId: user?._id || user?.id
-        },
+        { orderId: selectedOrder._id, volunteerId: selectedVolunteer, userId: user?._id || user?.id },
         { withCredentials: true }
       );
       if (data.success) {
@@ -76,6 +85,22 @@ const Home = () => {
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to accept order");
+    }
+  };
+
+  const handleRejectOrder = async (orderId) => {
+    try {
+      const { data } = await axios.put(
+        `${import.meta.env.VITE_BACKEND_URL}/order/reject`,
+        { orderId },
+        { withCredentials: true }
+      );
+      if (data.success) {
+        toast.success("Order rejected.");
+        fetchData();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to reject order");
     }
   };
 
@@ -136,6 +161,7 @@ const Home = () => {
               { label: "Pending", value: stats.pending, icon: <FiClock />, color: "text-amber-500", bg: "bg-amber-50" },
               { label: "Active", value: stats.accepted, icon: <FiTruck />, color: "text-blue-500", bg: "bg-blue-50" },
               { label: "Delivered", value: stats.completed, icon: <FiCheckCircle />, color: "text-emerald-500", bg: "bg-emerald-50" },
+              { label: "Funds Raised", value: donationStats.totalAmount >= 1000 ? `₹${(donationStats.totalAmount/1000).toFixed(1)}K` : `₹${donationStats.totalAmount}`, icon: <FiActivity />, color: "text-purple-500", bg: "bg-purple-50" },
             ].map((stat, i) => (
               <div key={i} className="bg-white px-6 py-4 rounded-[1.5rem] shadow-xl shadow-gray-100 border border-gray-50 flex items-center gap-4 flex-1 md:flex-none min-w-[140px]">
                 <div className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center text-xl shadow-sm`}>
@@ -187,15 +213,39 @@ const Home = () => {
                                 {order.userId?.firstName?.charAt(0) || "D"}
                               </div>
                               <div>
-                                <p className="font-black text-gray-900 leading-tight">{order.userId?.firstName || "Anonymous"}</p>
+                                <p className="font-black text-gray-900 leading-tight">{order.userId?.firstName || "Anonymous"} {order.userId?.lastName || ""}</p>
                                 <p className="text-xs text-gray-400 font-bold mt-0.5">{order.pincode}</p>
+                                {order.userId?.phone && (
+                                  <a href={`tel:${order.userId.phone}`} className="text-xs text-emerald-600 font-bold hover:underline mt-0.5 flex items-center gap-1">
+                                    📞 {order.userId.phone}
+                                  </a>
+                                )}
                               </div>
                             </div>
                           </td>
                           <td className="px-10 py-8">
-                            <div className="flex flex-col">
-                              <span className="font-black text-gray-800 leading-tight">{order.foodDetails}</span>
-                              <span className="text-xs text-emerald-600 font-black mt-1 uppercase tracking-widest">{order.quantity} Servings</span>
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-black text-gray-800 leading-tight">{order.foodDetails}</span>
+                                {(Date.now() - new Date(order.createdAt)) > 6 * 60 * 60 * 1000 && (
+                                  <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 animate-pulse">
+                                    ⚠️ Stale &gt;6h
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs text-emerald-600 font-black uppercase tracking-widest">{order.quantity} Servings</span>
+                                {order.foodType && (
+                                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${order.foodType === 'Veg' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                    {order.foodType}
+                                  </span>
+                                )}
+                              </div>
+                              {order.foodtime && (
+                                <span className="text-xs text-blue-500 font-bold flex items-center gap-1">
+                                  <FiCalendar className="inline" /> Pickup: {new Date(order.foodtime).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              )}
                             </div>
                           </td>
                           <td className="px-10 py-8">
@@ -209,12 +259,20 @@ const Home = () => {
                             </span>
                           </td>
                           <td className="px-10 py-8 text-right">
-                            <button
-                              onClick={() => setSelectedOrder(order)}
-                              className="px-6 py-3 bg-emerald-600 text-white rounded-xl font-black text-xs shadow-lg shadow-emerald-100 hover:bg-emerald-700 hover:scale-105 active:scale-95 transition-all"
-                            >
-                              Assign Hero
-                            </button>
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => setSelectedOrder(order)}
+                                className="px-6 py-3 bg-emerald-600 text-white rounded-xl font-black text-xs shadow-lg shadow-emerald-100 hover:bg-emerald-700 hover:scale-105 active:scale-95 transition-all"
+                              >
+                                Assign Hero
+                              </button>
+                              <button
+                                onClick={() => handleRejectOrder(order._id)}
+                                className="px-4 py-3 bg-red-50 text-red-500 rounded-xl font-black text-xs hover:bg-red-100 hover:scale-105 active:scale-95 transition-all"
+                              >
+                                Reject
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -304,13 +362,23 @@ const Home = () => {
               </div>
             </div>
 
-            {/* Quick Tips */}
-            <div className="bg-white rounded-[3rem] p-10 border-2 border-dashed border-gray-200">
-              <FiInfo className="text-3xl text-emerald-500 mb-4" />
-              <h4 className="text-lg font-black text-gray-800 mb-2">Pro Tip!</h4>
-              <p className="text-sm text-gray-500 font-medium leading-relaxed">
-                Respond to requests within <span className="text-emerald-600 font-bold">15 minutes</span> to maintain high donor satisfaction ratings.
-              </p>
+            {/* Funds Raised Card */}
+            <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-[3rem] p-10 text-white shadow-2xl shadow-purple-200 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl"></div>
+              <div className="relative z-10">
+                <p className="text-purple-200 text-[10px] font-black uppercase tracking-widest mb-4">Platform Funds Raised</p>
+                <p className="text-5xl font-black mb-1">₹{donationStats.totalAmount.toLocaleString('en-IN')}</p>
+                <p className="text-purple-200 text-sm font-bold mb-6">across {donationStats.totalCount} transaction{donationStats.totalCount !== 1 ? 's' : ''}</p>
+                <div className="w-full bg-white/20 rounded-full h-2 overflow-hidden">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    whileInView={{ width: `${Math.min((donationStats.totalAmount / 100000) * 100, 100)}%` }}
+                    transition={{ duration: 1.5 }}
+                    className="bg-white h-full rounded-full"
+                  />
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-widest mt-2 opacity-60">Goal: ₹1,00,000</p>
+              </div>
             </div>
           </div>
         </div>
@@ -366,6 +434,18 @@ const Home = () => {
                           <div>
                             <p className="font-black text-gray-900 text-lg">{v.firstName} {v.lastName}</p>
                             <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">{v.phone}</p>
+                            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                              {v.volunteerDetails?.availability && (
+                                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 uppercase tracking-widest">
+                                  {v.volunteerDetails.availability}
+                                </span>
+                              )}
+                              {v.volunteerDetails?.vehicle && (
+                                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 uppercase tracking-widest">
+                                  🚗 Has Vehicle
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                         <input

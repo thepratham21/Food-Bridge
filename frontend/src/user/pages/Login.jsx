@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
 import { FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
+import toast from 'react-hot-toast';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -33,8 +34,27 @@ const Login = () => {
       );
 
       if (response.data && response.data.user) {
-        const { user, token } = response.data;
-        login(user, token, 'user');
+        const { user } = response.data;
+        login(user);
+
+        // Show status toasts after login
+        try {
+          const ordersRes = await axios.get(
+            `${import.meta.env.VITE_BACKEND_URL}/order/orders`,
+            { withCredentials: true }
+          );
+          const orders = ordersRes.data.orders || [];
+          const pending = orders.filter(o => o.status === 'Pending').length;
+          const accepted = orders.filter(o => o.status === 'Accepted').length;
+
+          if (accepted > 0) {
+            toast.success(`${accepted} donation${accepted > 1 ? 's are' : ' is'} on the way to an NGO!`, { duration: 5000 });
+          }
+          if (pending > 0) {
+            toast(`You have ${pending} pending request${pending > 1 ? 's' : ''} awaiting pickup.`, { icon: '⏳', duration: 5000 });
+          }
+        } catch (_) { /* non-critical */ }
+
         navigate('/user/dashboard');
       } else {
         setError('Invalid response format');

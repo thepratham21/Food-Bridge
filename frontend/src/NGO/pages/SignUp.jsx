@@ -81,23 +81,32 @@ const SignUp = () => {
     }
 
     try {
-      const response = await axios.post(
+      const payload = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        password: formData.password,
+        role: "NGO",
+        pincode: formData.pincode,
+        ngoDetails: {
+          registrationNumber: formData.registrationNumber,
+          name: `${formData.firstName} ${formData.lastName}`,
+        },
+      };
+
+      await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/user/register`,
-        formData,
-        {
-          withCredentials: true,
-          headers: { "Content-Type": "application/json" },
-        }
+        payload,
+        { withCredentials: true, headers: { "Content-Type": "application/json" } }
       );
 
-      const data = response.data;
-
-      navigate("/", {
+      navigate("/ngo/login", {
         state: { success: "Registration successful! Please login." },
       });
     } catch (error) {
-      setError(error.message || "Error registering user. Please try again.");
-      console.error(error);
+      setError(error.response?.data?.message || "Error registering. Please try again.");
     } finally {
       setLoading(false);
     }

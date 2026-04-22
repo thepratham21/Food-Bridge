@@ -34,6 +34,9 @@ app.use("/api/v1/donation", donationRoutes);
 // DB connection
 dbConnection();
 
+// SMTP startup check
+console.log("[SMTP] Email configured:", !!process.env.SMTP_EMAIL, "→", process.env.SMTP_EMAIL || "NOT SET");
+
 // Error middleware
 app.use(errormiddleWare);
 
