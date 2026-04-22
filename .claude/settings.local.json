@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(npm install *)",
-      "Bash(node -e \"import\\('nodemailer'\\).then\\(m => console.log\\('nodemailer OK', m.default.createTransport\\)\\)\")"
-    ]
-  }
-}
